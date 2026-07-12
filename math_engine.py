@@ -72,6 +72,7 @@ class TransformationResult:
     description: str
     matrix: Matrix | None
     displacement: Point | None
+    center: Point | None
     before: tuple[Point, ...]
     after: tuple[Point, ...]
 
@@ -87,15 +88,25 @@ class Figure:
 
     def apply(self, description: str, matrix: Matrix) -> TransformationResult:
         before = self.points
-        after = tuple(multiply_matrix_vector(matrix, point) for point in before)
-        entry = TransformationResult(description, matrix, None, before, after)
+        center = (
+            sum(point[0] for point in before) / len(before),
+            sum(point[1] for point in before) / len(before),
+        )
+        after = tuple(
+            translate_point(
+                multiply_matrix_vector(matrix, (point[0] - center[0], point[1] - center[1])),
+                center,
+            )
+            for point in before
+        )
+        entry = TransformationResult(description, matrix, None, center, before, after)
         self.points = after
         return entry
 
     def translate(self, description: str, displacement: Point) -> TransformationResult:
         before = self.points
         after = tuple(translate_point(point, displacement) for point in before)
-        result = TransformationResult(description, None, displacement, before, after)
+        result = TransformationResult(description, None, displacement, None, before, after)
         self.points = after
         return result
 

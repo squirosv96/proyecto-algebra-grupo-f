@@ -25,6 +25,14 @@ def read_number(prompt: str, nonzero: bool = False) -> float:
             print("Ingrese un numero valido, por ejemplo 2 o 1.5.")
 
 
+def read_positive_integer(prompt: str) -> int:
+    while True:
+        value = input(prompt).strip()
+        if value.isdigit() and int(value) > 0:
+            return int(value)
+        print("Ingrese un numero entero mayor que cero.")
+
+
 def choose_figure() -> Figure:
     print("\nFIGURAS DISPONIBLES")
     for key, (name, points) in FIGURES.items():
@@ -60,16 +68,47 @@ def show_result(figure: Figure, entry) -> None:
     print(f"Coordenadas antes:   {format_points(entry.before)}")
     if entry.matrix is not None:
         print("\nMatriz 2x2 utilizada:\n" + format_matrix(entry.matrix))
-        print("\nCalculos realizados (M * [x, y]):")
+        if entry.center is not None:
+            print(f"Centro fijo de la figura: ({entry.center[0]:.2f}, {entry.center[1]:.2f})")
+            print("Calculo: centro + M * (punto - centro)")
+        else:
+            print("\nCalculos realizados (M * [x, y]):")
         calculation, operator = calculation_text, entry.matrix
     else:
         print(f"\nVector de traslacion: ({entry.displacement[0]:.2f}, {entry.displacement[1]:.2f})")
         print("\nCalculos realizados ([x, y] + [dx, dy]):")
         calculation, operator = translation_calculation_text, entry.displacement
     for index, (before, after) in enumerate(zip(entry.before, entry.after), 1):
-        print(f"  P{index}: {calculation(operator, before, after)}")
+        if entry.center is not None:
+            relative = (before[0] - entry.center[0], before[1] - entry.center[1])
+            transformed_relative = (after[0] - entry.center[0], after[1] - entry.center[1])
+            detail = calculation(operator, relative, transformed_relative)
+            print(f"  P{index}: relativo al centro {relative} -> {detail}; final = ({after[0]:.2f}, {after[1]:.2f})")
+        else:
+            print(f"  P{index}: {calculation(operator, before, after)}")
     print(f"\nCoordenadas despues: {format_points(entry.after)}")
     print("\nRepresentacion grafica:\n" + ascii_plot(entry.before, entry.after))
+
+
+def apply_transformation(figure: Figure) -> None:
+    description, matrix, displacement = choose_transformation()
+    result = (figure.apply(description, matrix) if matrix is not None
+              else figure.translate(description, displacement))
+    show_result(figure, result)
+
+
+def apply_sequence(figure: Figure) -> None:
+    amount = read_positive_integer("Cantidad de transformaciones en la secuencia: ")
+    initial_points = figure.points
+    for step in range(1, amount + 1):
+        print(f"\n--- Transformacion {step} de {amount} ---")
+        apply_transformation(figure)
+    print(f"\nSecuencia completada. Coordenadas finales: {format_points(figure.points)}")
+    print("\nCOMPARACION DE LA SECUENCIA COMPLETA")
+    print(f"Antes:   {format_points(initial_points)}")
+    print(f"Despues: {format_points(figure.points)}")
+    print("\nGrafico antes y despues de toda la secuencia:\n"
+          + ascii_plot(initial_points, figure.points))
 
 
 def main() -> None:
@@ -79,17 +118,17 @@ def main() -> None:
     figure = choose_figure()
     while True:
         print(f"\nFigura actual: {figure.name}\nCoordenadas: {format_points(figure.points)}")
-        print("\n1. Aplicar transformacion\n2. Restablecer figura\n3. Escoger otra figura\n4. Salir")
-        option = read_option("Seleccione una opcion: ", {"1", "2", "3", "4"})
+        print("\n1. Aplicar una transformacion\n2. Aplicar secuencia de transformaciones"
+              "\n3. Restablecer figura\n4. Escoger otra figura\n5. Salir")
+        option = read_option("Seleccione una opcion: ", {"1", "2", "3", "4", "5"})
         if option == "1":
-            description, matrix, displacement = choose_transformation()
-            result = (figure.apply(description, matrix) if matrix is not None
-                      else figure.translate(description, displacement))
-            show_result(figure, result)
+            apply_transformation(figure)
         elif option == "2":
+            apply_sequence(figure)
+        elif option == "3":
             figure.reset()
             print("Figura restablecida.")
-        elif option == "3":
+        elif option == "4":
             figure = choose_figure()
         else:
             print("Gracias por usar PixelForge MathEngine 2D.")
