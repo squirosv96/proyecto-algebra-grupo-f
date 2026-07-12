@@ -44,9 +44,8 @@ def choose_transformation():
         angle = read_number("Angulo en grados (positivo = antihorario): ")
         return f"Rotacion {angle:g} grados", rotation_matrix(angle), None
     if option == "3":
-        sx = read_number("Factor de escala en x: ", True)
-        sy = read_number("Factor de escala en y: ", True)
-        return f"Escalamiento ({sx:g}, {sy:g})", scaling_matrix(sx, sy), None
+        scale = read_number("Factor de escala para x e y: ", True)
+        return f"Escalamiento uniforme ({scale:g})", scaling_matrix(scale), None
     print("1. Respecto al eje X\n2. Respecto al eje Y")
     reflection = read_option("Seleccione el tipo de reflexion: ", {"1", "2"})
     description, axis = {

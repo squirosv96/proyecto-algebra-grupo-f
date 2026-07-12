@@ -22,8 +22,9 @@ def rotation_matrix(angle_degrees: float) -> Matrix:
     return ((c, -s), (s, c))
 
 
-def scaling_matrix(scale_x: float, scale_y: float) -> Matrix:
-    return ((scale_x, 0.0), (0.0, scale_y))
+def scaling_matrix(scale: float) -> Matrix:
+    """Construye una escala uniforme que conserva la forma de la figura."""
+    return ((scale, 0.0), (0.0, scale))
 
 
 def reflection_matrix(axis: str) -> Matrix:
