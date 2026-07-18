@@ -111,6 +111,24 @@ def apply_sequence(figure: Figure) -> None:
           + ascii_plot(initial_points, figure.points))
 
 
+def show_history(figure: Figure) -> None:
+    print(f"\n{'=' * 72}")
+    print(f"HISTORIAL DE TRANSFORMACIONES - {figure.name.upper()}")
+    print(f"{'=' * 72}")
+
+    if not figure.history:
+        print("El historial está vacío. Aún no se han aplicado transformaciones.")
+        return
+
+    for index, entry in enumerate(figure.history, 1):
+        print(f"\n🔹 Paso {index}: {entry.description}")
+        print(f"   Coordenadas antes:  {format_points(entry.before)}")
+        print(f"   Coordenadas después: {format_points(entry.after)}")
+
+    print(f"\n{'=' * 72}")
+    print("Fin del historial.")
+
+
 def main() -> None:
     print("=" * 72)
     print("PIXELFORGE MATHENGINE 2D v1.0 - TRANSFORMACIONES GEOMETRICAS")
@@ -118,17 +136,20 @@ def main() -> None:
     figure = choose_figure()
     while True:
         print(f"\nFigura actual: {figure.name}\nCoordenadas: {format_points(figure.points)}")
-        print("\n1. Aplicar una transformacion\n2. Aplicar secuencia de transformaciones"
-              "\n3. Restablecer figura\n4. Escoger otra figura\n5. Salir")
+        print("\n1. Aplicar una transformación\n2. Aplicar secuencia de transformaciones"
+              "\n3. Ver historial de transformaciones"
+              "\n4. Restablecer figura\n5. Escoger otra figura\n6. Salir")
         option = read_option("Seleccione una opcion: ", {"1", "2", "3", "4", "5"})
         if option == "1":
             apply_transformation(figure)
         elif option == "2":
             apply_sequence(figure)
         elif option == "3":
+            show_history(figure)
+        elif option == "4":
             figure.reset()
             print("Figura restablecida.")
-        elif option == "4":
+        elif option == "5":
             figure = choose_figure()
         else:
             print("Gracias por usar PixelForge MathEngine 2D.")

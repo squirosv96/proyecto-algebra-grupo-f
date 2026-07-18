@@ -82,9 +82,12 @@ class Figure:
     name: str
     original_points: tuple[Point, ...]
     points: tuple[Point, ...] = field(init=False)
+    #history es el atributo que almacenara el historial de transformaciones registradas a la figura
+    history: list[TransformationResult] = field(init=False, default_factory=list)
 
     def __post_init__(self) -> None:
         self.points = self.original_points
+        self.history = []
 
     def apply(self, description: str, matrix: Matrix) -> TransformationResult:
         before = self.points
@@ -101,6 +104,8 @@ class Figure:
         )
         entry = TransformationResult(description, matrix, None, center, before, after)
         self.points = after
+        #Se guarda el resultado
+        self.history.append(entry)
         return entry
 
     def translate(self, description: str, displacement: Point) -> TransformationResult:
@@ -108,10 +113,14 @@ class Figure:
         after = tuple(translate_point(point, displacement) for point in before)
         result = TransformationResult(description, None, displacement, None, before, after)
         self.points = after
+        self.history.append(result)
+
         return result
 
     def reset(self) -> None:
         self.points = self.original_points
+        #Cuando el usuario limpie la figura, el histrial se vacía
+        self.history.clear()
 
 
 def ascii_plot(original: Sequence[Point], transformed: Sequence[Point], width: int = 61, height: int = 21) -> str:
