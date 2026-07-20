@@ -139,7 +139,7 @@ def main() -> None:
         print("\n1. Aplicar una transformación\n2. Aplicar secuencia de transformaciones"
               "\n3. Ver historial de transformaciones"
               "\n4. Restablecer figura\n5. Escoger otra figura\n6. Salir")
-        option = read_option("Seleccione una opcion: ", {"1", "2", "3", "4", "5"})
+        option = read_option("Seleccione una opcion: ", {"1", "2", "3", "4", "5", "6"})
         if option == "1":
             apply_transformation(figure)
         elif option == "2":
