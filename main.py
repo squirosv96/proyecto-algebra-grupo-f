@@ -1,8 +1,9 @@
 """Interfaz de consola de PixelForge MathEngine 2D."""
 
 from math_engine import (FIGURES, Figure, ascii_plot,
-    calculation_text, format_matrix, format_points, rotation_matrix,
-    scaling_matrix, reflection_matrix, translation_calculation_text)
+                         calculation_text, format_matrix, format_points, rotation_matrix,
+                         scaling_matrix, reflection_matrix, translation_calculation_text,
+                         check_subspace_restriction, analyze_figure_vectors)
 
 
 def read_option(prompt: str, valid: set[str]) -> str:
@@ -128,6 +129,25 @@ def show_history(figure: Figure) -> None:
     print(f"\n{'=' * 72}")
     print("Fin del historial.")
 
+def analyze_scene_menu(figure: Figure) -> None:
+    print(f"\n{'=' * 72}")
+    print("ACTIVIDAD 3: ANÁLISIS MATEMÁTICO DEL ESCENARIO")
+    print(f"{'=' * 72}")
+    print("1. Analizar vectores de la figura actual (Independencia, Base y Dimensión)")
+    print("2. Evaluar restricción de espacio/subespacio vectorial de movimiento")
+
+    sub_option = read_option("Seleccione una opción de análisis: ", {"1", "2"})
+
+    if sub_option == "1":
+        print(analyze_figure_vectors(figure.points))
+    else:
+        print("\n--- EVALUACIÓN DE SUBESPACIOS VECTORIALES ---")
+        print("Ingrese la restricción de movimiento de la forma: a*x + b*y = c")
+        a = read_number("Ingrese la constante 'a': ")
+        b = read_number("Ingrese la constante 'b': ")
+        c = read_number("Ingrese la constante 'c': ")
+        print("\n" + check_subspace_restriction(a, b, c))
+
 
 def main() -> None:
     print("=" * 72)
@@ -136,20 +156,28 @@ def main() -> None:
     figure = choose_figure()
     while True:
         print(f"\nFigura actual: {figure.name}\nCoordenadas: {format_points(figure.points)}")
-        print("\n1. Aplicar una transformación\n2. Aplicar secuencia de transformaciones"
-              "\n3. Ver historial de transformaciones"
-              "\n4. Restablecer figura\n5. Escoger otra figura\n6. Salir")
-        option = read_option("Seleccione una opcion: ", {"1", "2", "3", "4", "5", "6"})
+        print("\n1. Aplicar una transformacion"
+              "\n2. Aplicar secuencia de transformaciones"
+              "\n3. Analizar matematicamente el escenario"
+              "\n4. Ver historial de transformaciones"
+              "\n5. Restablecer figura"
+              "\n6. Escoger otra figura"
+              "\n7. Salir")
+
+        option = read_option("Seleccione una opcion: ", {"1", "2", "3", "4", "5", "6", "7"})
+
         if option == "1":
             apply_transformation(figure)
         elif option == "2":
             apply_sequence(figure)
         elif option == "3":
-            show_history(figure)
+            analyze_scene_menu(figure) # <-- Llama a nuestra nueva funcionalidad
         elif option == "4":
-            figure.reset()
-            print("Figura restablecida.")
+            show_history(figure)
         elif option == "5":
+            figure.reset()
+            print("Figura restablecida y su historial ha sido limpiado.")
+        elif option == "6":
             figure = choose_figure()
         else:
             print("Gracias por usar PixelForge MathEngine 2D.")

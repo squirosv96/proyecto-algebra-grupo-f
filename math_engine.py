@@ -168,3 +168,91 @@ def ascii_plot(original: Sequence[Point], transformed: Sequence[Point], width: i
                    max_y - row / (height - 1) * (max_y - min_y)), "/".join(labels))
     legend = "O#=vertice original  T#=vertice transformado  X#=coinciden"
     return "\n".join("".join(row) for row in grid) + "\n" + legend
+
+
+# =====================================================================
+# ACTIVIDAD 3: ANÁLISIS MATEMÁTICO DEL ESCENARIO
+# =====================================================================
+
+def check_subspace_restriction(a: float, b: float, c: float) -> str:
+    """
+    Verifica si una restricción lineal ax + by = c forma un subespacio en R2.
+    Decisión: Un subespacio requiere contener al vector nulo (0,0).
+    Por ende, 'c' DEBE ser 0 para que sea un subespacio válido.
+    """
+    report = [f"Analizando la restricción de movimiento: {a:g}x + {b:g}y = {c:g}"]
+
+    # 1. Verificación del vector nulo (0,0)
+    contains_zero = (a * 0 + b * 0 == c)
+    report.append(f"1. Contiene al origen (0,0): {contains_zero} (Evaluación: {a:g}(0) + {b:g}(0) = {c:g})")
+
+    if not contains_zero:
+        report.append("RESULTADO: NO es un subespacio vectorial porque no incluye la posición (0,0).")
+        return "\n".join(report)
+
+    # 2. Demostración de Cierre por Suma
+    report.append("2. Cierre bajo la suma: VÁLIDO. Si u=(x1,y1) y v=(x2,y2) cumplen la ecuación, u+v también.")
+    # 3. Demostración de Cierre por Escalar
+    report.append("3. Cierre bajo multiplicación por escalar: VÁLIDO. Si u=(x1,y1) cumple, k*u también.")
+    report.append("RESULTADO: SÍ es un subespacio vectorial de R2 (representa una línea que pasa por el origen).")
+
+    return "\n".join(report)
+
+
+def are_linearly_independent(v1: Point, v2: Point) -> bool:
+    """
+    Determina si dos vectores en R2 son linealmente independientes.
+    Decisión: En R2, 2 vectores son LI si su determinante es diferente de cero (no son colineales/paralelos).
+    det([v1, v2]) = v1[0]*v2[1] - v1[1]*v2[0]
+    """
+    det = v1[0] * v2[1] - v1[1] * v2[0]
+    return abs(det) > 1e-9 # Evita errores de precisión flotante
+
+
+def analyze_figure_vectors(points: tuple[Point, ...]) -> str:
+    """
+    Analiza la independencia lineal, redundancia, bases y dimensión de los vértices de una figura.
+    """
+    report = ["\n--- ANÁLISIS DE INDEPENDENCIA LINEAL Y BASES ---"]
+    report.append(f"Puntos analizados: {format_points(points)}")
+
+    # Filtrar el origen (0,0) ya que siempre es linealmente dependiente
+    non_zero_points = [p for p in points if abs(p[0]) > 1e-9 or abs(p[1]) > 1e-9]
+
+    if not non_zero_points:
+        report.append("Todos los puntos están en el origen (0,0). Dimensión = 0.")
+        return "\n".join(report)
+
+    basis: list[Point] = [non_zero_points[0]]
+    redundant: list[Point] = []
+
+    for p in non_zero_points[1:]:
+        # Verificar si 'p' es independiente respecto al primer vector de la base encontrada
+        if len(basis) < 2 and are_linearly_independent(basis[0], p):
+            basis.append(p)
+        else:
+            redundant.append(p)
+
+    # Redundancia original (si había ceros)
+    zeros = [p for p in points if abs(p[0]) <= 1e-9 and abs(p[1]) <= 1e-9]
+    redundant.extend(zeros)
+
+    report.append(f"\n1. Vectores Base encontrados ({len(basis)}): {basis}")
+    report.append(f"2. Vectores Redundantes/Dependientes ({len(redundant)}): {redundant}")
+    report.append(f"3. Dimensión del espacio generado: {len(basis)}")
+
+    # Interpretación geométrica
+    report.append("\n--- INTERPRETACIÓN GEOMÉTRICA ---")
+    if len(basis) == 2:
+        report.append("• Los puntos de la figura generan todo el espacio 2D (R2).")
+        report.append("• Toda la escena/figura se puede representar usando únicamente los 2 vectores de la base.")
+    elif len(basis) == 1:
+        report.append("• Todos los puntos son colineales (están sobre una misma línea que pasa por el origen).")
+        report.append("• La figura está colapsada en una dimensión (Dimensión = 1).")
+
+    if redundant:
+        report.append(f"• ¡Optimización posible! Hay {len(redundant)} punto(s) redundante(s) que son combinación lineal.")
+    else:
+        report.append("• Representación óptima: No existen puntos redundantes.")
+
+    return "\n".join(report)
