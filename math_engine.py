@@ -289,8 +289,19 @@ def analyze_figure_vectors(points: tuple[Point, ...]) -> str:
     zeros = [p for p in points if abs(p[0]) <= 1e-9 and abs(p[1]) <= 1e-9]
     redundant.extend(zeros)
 
-    report.append(f"\n1. Vectores Base encontrados ({len(basis)}): {basis}")
-    report.append(f"2. Vectores Redundantes/Dependientes ({len(redundant)}): {redundant}")
+    # Se redondea solo la presentacion; los calculos conservan su precision.
+    formatted_basis = "[" + ", ".join(
+        f"({x:.2f}, {y:.2f})" for x, y in basis
+    ) + "]"
+    formatted_redundant = "[" + ", ".join(
+        f"({x:.2f}, {y:.2f})" for x, y in redundant
+    ) + "]"
+
+    report.append(f"\n1. Vectores Base encontrados ({len(basis)}): {formatted_basis}")
+    report.append(
+        f"2. Vectores Redundantes/Dependientes ({len(redundant)}): "
+        f"{formatted_redundant}"
+    )
     report.append(f"3. Dimensión del espacio generado: {len(basis)}")
 
     # Interpretación geométrica
