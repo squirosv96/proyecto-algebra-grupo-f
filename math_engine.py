@@ -6,9 +6,11 @@ from dataclasses import dataclass, field
 from math import cos, radians, sin
 from typing import Sequence
 
+# Alias de tipos: una matriz 2x2 y un punto/vector del plano R2.
 Matrix = tuple[tuple[float, float], tuple[float, float]]
 Point = tuple[float, float]
 
+# Figuras iniciales. Cada vertice se almacena como una tupla (x, y).
 FIGURES: dict[str, tuple[str, tuple[Point, ...]]] = {
     "1": ("Jugador - cuadrado", ((0, 0), (2, 0), (2, 2), (0, 2))),
     "2": ("Enemigo - triangulo", ((0, 0), (2, 0), (1, 2))),
@@ -17,6 +19,8 @@ FIGURES: dict[str, tuple[str, tuple[Point, ...]]] = {
 
 
 def rotation_matrix(angle_degrees: float) -> Matrix:
+    """Construye la matriz 2x2 de rotacion para el angulo indicado."""
+    # Las funciones trigonometricas de Python trabajan con radianes.
     angle = radians(angle_degrees)
     c, s = cos(angle), sin(angle)
     return ((c, -s), (s, c))
@@ -28,6 +32,7 @@ def scaling_matrix(scale: float) -> Matrix:
 
 
 def reflection_matrix(axis: str) -> Matrix:
+    """Devuelve la matriz de reflexion correspondiente al eje X o Y."""
     if axis == "x":
         return ((1.0, 0.0), (0.0, -1.0))
     if axis == "y":
@@ -44,18 +49,22 @@ def multiply_matrix_vector(matrix: Matrix, point: Point) -> Point:
 
 
 def translate_point(point: Point, displacement: Point) -> Point:
+    """Traslada un punto sumando el vector de desplazamiento (dx, dy)."""
     return (point[0] + displacement[0], point[1] + displacement[1])
 
 
 def format_matrix(matrix: Matrix) -> str:
+    """Convierte una matriz en texto alineado para mostrarla en consola."""
     return "\n".join("| " + "  ".join(f"{value:8.3f}" for value in row) + " |" for row in matrix)
 
 
 def format_points(points: Sequence[Point]) -> str:
+    """Enumera y formatea una coleccion de vertices como P1, P2, etc."""
     return "  ".join(f"P{i}=({x:.2f}, {y:.2f})" for i, (x, y) in enumerate(points, 1))
 
 
 def calculation_text(matrix: Matrix, point: Point, result: Point) -> str:
+    """Explica las operaciones de la multiplicacion matriz-vector."""
     x, y = point
     first = f"({matrix[0][0]:.3f}*{x:.2f}) + ({matrix[0][1]:.3f}*{y:.2f})"
     second = f"({matrix[1][0]:.3f}*{x:.2f}) + ({matrix[1][1]:.3f}*{y:.2f})"
@@ -63,12 +72,15 @@ def calculation_text(matrix: Matrix, point: Point, result: Point) -> str:
 
 
 def translation_calculation_text(displacement: Point, point: Point, result: Point) -> str:
+    """Explica la suma utilizada para trasladar un vertice."""
     return (f"x' = {point[0]:.2f} + {displacement[0]:.2f} = {result[0]:.2f}; "
             f"y' = {point[1]:.2f} + {displacement[1]:.2f} = {result[1]:.2f}")
 
 
 @dataclass(frozen=True)
 class TransformationResult:
+    """Datos necesarios para explicar y registrar una transformacion."""
+
     description: str
     matrix: Matrix | None
     displacement: Point | None
@@ -79,36 +91,69 @@ class TransformationResult:
 
 @dataclass
 class Figure:
+    """Representa una figura y administra sus coordenadas actuales."""
+
     name: str
     original_points: tuple[Point, ...]
     points: tuple[Point, ...] = field(init=False)
-    #history es el atributo que almacenara el historial de transformaciones registradas a la figura
+    # Almacena cada transformacion para reconstruir el recorrido de la figura.
     history: list[TransformationResult] = field(init=False, default_factory=list)
 
     def __post_init__(self) -> None:
+        """Inicia la figura con sus puntos originales y un historial vacio."""
         self.points = self.original_points
         self.history = []
 
     def apply(self, description: str, matrix: Matrix) -> TransformationResult:
-        before = self.points
-        center = (
-            sum(point[0] for point in before) / len(before),
-            sum(point[1] for point in before) / len(before),
-        )
-        after = tuple(
-            translate_point(
-                multiply_matrix_vector(matrix, (point[0] - center[0], point[1] - center[1])),
+        """Aplica una matriz respecto al centro actual de la figura."""
+        points_before = self.points
+        number_of_points = len(points_before)
+
+        # El centro se obtiene promediando por separado las x y las y.
+        sum_x = sum(point[0] for point in points_before)
+        sum_y = sum(point[1] for point in points_before)
+        center_x = sum_x / number_of_points
+        center_y = sum_y / number_of_points
+        center = (center_x, center_y)
+
+        # Formula por vertice: p' = centro + M * (p - centro).
+        # Se lleva el punto al origen, se transforma y se devuelve al centro.
+        transformed_points: list[Point] = []
+        for point in points_before:
+            point_x, point_y = point
+
+            relative_x = point_x - center_x
+            relative_y = point_y - center_y
+            point_relative_to_center = (relative_x, relative_y)
+
+            transformed_relative_point = multiply_matrix_vector(
+                matrix,
+                point_relative_to_center,
+            )
+
+            final_point = translate_point(
+                transformed_relative_point,
                 center,
             )
-            for point in before
+            transformed_points.append(final_point)
+
+        points_after = tuple(transformed_points)
+        result = TransformationResult(
+            description,
+            matrix,
+            None,
+            center,
+            points_before,
+            points_after,
         )
-        entry = TransformationResult(description, matrix, None, center, before, after)
-        self.points = after
-        #Se guarda el resultado
-        self.history.append(entry)
-        return entry
+
+        # El resultado pasa a ser el estado actual y se registra.
+        self.points = points_after
+        self.history.append(result)
+        return result
 
     def translate(self, description: str, displacement: Point) -> TransformationResult:
+        """Suma el mismo desplazamiento a todos los vertices."""
         before = self.points
         after = tuple(translate_point(point, displacement) for point in before)
         result = TransformationResult(description, None, displacement, None, before, after)
@@ -118,6 +163,7 @@ class Figure:
         return result
 
     def reset(self) -> None:
+        """Recupera la figura original y elimina su historial."""
         self.points = self.original_points
         #Cuando el usuario limpie la figura, el histrial se vacía
         self.history.clear()
@@ -125,18 +171,22 @@ class Figure:
 
 def ascii_plot(original: Sequence[Point], transformed: Sequence[Point], width: int = 61, height: int = 21) -> str:
     """Dibuja vertices numerados: O original, T transformado, X coincidencia."""
+    # Se incluye el origen para que los ejes siempre tengan una referencia.
     all_points = list(original) + list(transformed) + [(0.0, 0.0)]
     min_x, max_x = min(p[0] for p in all_points), max(p[0] for p in all_points)
     min_y, max_y = min(p[1] for p in all_points), max(p[1] for p in all_points)
+    # El margen evita que las etiquetas queden pegadas al borde.
     px, py = max(1.0, (max_x - min_x) * 0.1), max(1.0, (max_y - min_y) * 0.1)
     min_x, max_x, min_y, max_y = min_x - px, max_x + px, min_y - py, max_y + py
     grid = [[" " for _ in range(width)] for _ in range(height)]
 
     def cell(point: Point) -> tuple[int, int]:
+        """Convierte coordenadas cartesianas en fila y columna del texto."""
         column = round((point[0] - min_x) / (max_x - min_x) * (width - 1))
         row = round((max_y - point[1]) / (max_y - min_y) * (height - 1))
         return row, column
 
+    # Los ejes se dibujan solo si el cero pertenece al rango visible.
     if min_x <= 0 <= max_x:
         axis_column = cell((0, 0))[1]
         for row in range(height):
@@ -148,12 +198,14 @@ def ascii_plot(original: Sequence[Point], transformed: Sequence[Point], width: i
     origin_row, origin_column = cell((0, 0))
     grid[origin_row][origin_column] = "+"
     def put_label(point: Point, label: str) -> None:
+        """Escribe una etiqueta sin sobrepasar el borde derecho."""
         row, column = cell(point)
         # Desplaza la etiqueta si esta cerca del borde derecho.
         start = min(column, width - len(label))
         for offset, character in enumerate(label):
             grid[row][start + offset] = character
 
+    # Agrupa etiquetas cuando varios vertices ocupan la misma celda.
     transformed_cells = {cell(point): index for index, point in enumerate(transformed, 1)}
     labels_by_cell: dict[tuple[int, int], list[str]] = {}
     for index, point in enumerate(original, 1):

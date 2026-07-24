@@ -7,6 +7,7 @@ from math_engine import (FIGURES, Figure, ascii_plot,
 
 
 def read_option(prompt: str, valid: set[str]) -> str:
+    """Solicita una opcion hasta que pertenezca al conjunto permitido."""
     while True:
         option = input(prompt).strip()
         if option in valid:
@@ -15,6 +16,7 @@ def read_option(prompt: str, valid: set[str]) -> str:
 
 
 def read_number(prompt: str, nonzero: bool = False) -> float:
+    """Lee un numero decimal y, si se solicita, rechaza el valor cero."""
     while True:
         try:
             value = float(input(prompt).strip().replace(",", "."))
@@ -27,6 +29,7 @@ def read_number(prompt: str, nonzero: bool = False) -> float:
 
 
 def read_positive_integer(prompt: str) -> int:
+    """Lee una cantidad entera estrictamente positiva."""
     while True:
         value = input(prompt).strip()
         if value.isdigit() and int(value) > 0:
@@ -35,6 +38,7 @@ def read_positive_integer(prompt: str) -> int:
 
 
 def choose_figure() -> Figure:
+    """Muestra el catalogo y crea la figura seleccionada."""
     print("\nFIGURAS DISPONIBLES")
     for key, (name, points) in FIGURES.items():
         print(f"  {key}. {name}: {format_points(points)}")
@@ -44,8 +48,10 @@ def choose_figure() -> Figure:
 
 
 def choose_transformation():
+    """Recopila los parametros de la transformacion elegida."""
     print("\n1. Trasladar\n2. Rotar\n3. Escalar\n4. Reflejar")
     option = read_option("Seleccione una transformacion: ", {"1", "2", "3", "4"})
+    # La traslacion usa un vector; las demas operaciones usan matrices 2x2.
     if option == "1":
         dx, dy = read_number("Desplazamiento en x: "), read_number("Desplazamiento en y: ")
         return f"Traslacion ({dx:g}, {dy:g})", None, (dx, dy)
@@ -65,8 +71,10 @@ def choose_transformation():
 
 
 def show_result(figure: Figure, entry) -> None:
+    """Presenta operador, calculos, coordenadas y grafico comparativo."""
     print(f"\n{'=' * 72}\n{entry.description}\nFigura: {figure.name}")
     print(f"Coordenadas antes:   {format_points(entry.before)}")
+    # Una matriz indica rotacion, escalamiento o reflexion.
     if entry.matrix is not None:
         print("\nMatriz 2x2 utilizada:\n" + format_matrix(entry.matrix))
         if entry.center is not None:
@@ -76,9 +84,11 @@ def show_result(figure: Figure, entry) -> None:
             print("\nCalculos realizados (M * [x, y]):")
         calculation, operator = calculation_text, entry.matrix
     else:
+        # La ausencia de matriz indica una traslacion vectorial.
         print(f"\nVector de traslacion: ({entry.displacement[0]:.2f}, {entry.displacement[1]:.2f})")
         print("\nCalculos realizados ([x, y] + [dx, dy]):")
         calculation, operator = translation_calculation_text, entry.displacement
+    # zip relaciona cada vertice anterior con su resultado.
     for index, (before, after) in enumerate(zip(entry.before, entry.after), 1):
         if entry.center is not None:
             relative = (before[0] - entry.center[0], before[1] - entry.center[1])
@@ -92,6 +102,7 @@ def show_result(figure: Figure, entry) -> None:
 
 
 def apply_transformation(figure: Figure) -> None:
+    """Ejecuta una transformacion y muestra inmediatamente su resultado."""
     description, matrix, displacement = choose_transformation()
     result = (figure.apply(description, matrix) if matrix is not None
               else figure.translate(description, displacement))
@@ -99,7 +110,9 @@ def apply_transformation(figure: Figure) -> None:
 
 
 def apply_sequence(figure: Figure) -> None:
+    """Aplica varias operaciones en orden sobre el resultado anterior."""
     amount = read_positive_integer("Cantidad de transformaciones en la secuencia: ")
+    # Se conserva el inicio para compararlo con el resultado completo.
     initial_points = figure.points
     for step in range(1, amount + 1):
         print(f"\n--- Transformacion {step} de {amount} ---")
@@ -113,6 +126,7 @@ def apply_sequence(figure: Figure) -> None:
 
 
 def show_history(figure: Figure) -> None:
+    """Lista cronologicamente las transformaciones registradas."""
     print(f"\n{'=' * 72}")
     print(f"HISTORIAL DE TRANSFORMACIONES - {figure.name.upper()}")
     print(f"{'=' * 72}")
@@ -130,6 +144,7 @@ def show_history(figure: Figure) -> None:
     print("Fin del historial.")
 
 def analyze_scene_menu(figure: Figure) -> None:
+    """Permite escoger entre los analisis matematicos disponibles."""
     print(f"\n{'=' * 72}")
     print("ACTIVIDAD 3: ANÁLISIS MATEMÁTICO DEL ESCENARIO")
     print(f"{'=' * 72}")
@@ -139,8 +154,10 @@ def analyze_scene_menu(figure: Figure) -> None:
     sub_option = read_option("Seleccione una opción de análisis: ", {"1", "2"})
 
     if sub_option == "1":
+        # Se analizan las coordenadas actuales, no solo las originales.
         print(analyze_figure_vectors(figure.points))
     else:
+        # El usuario define una ecuacion lineal de la forma ax + by = c.
         print("\n--- EVALUACIÓN DE SUBESPACIOS VECTORIALES ---")
         print("Ingrese la restricción de movimiento de la forma: a*x + b*y = c")
         a = read_number("Ingrese la constante 'a': ")
@@ -150,10 +167,12 @@ def analyze_scene_menu(figure: Figure) -> None:
 
 
 def main() -> None:
+    """Punto de entrada y ciclo principal del programa."""
     print("=" * 72)
     print("PIXELFORGE MATHENGINE 2D v1.0 - TRANSFORMACIONES GEOMETRICAS")
     print("=" * 72)
     figure = choose_figure()
+    # El ciclo termina cuando el usuario selecciona la opcion Salir.
     while True:
         print(f"\nFigura actual: {figure.name}\nCoordenadas: {format_points(figure.points)}")
         print("\n1. Aplicar una transformacion"
@@ -166,6 +185,7 @@ def main() -> None:
 
         option = read_option("Seleccione una opcion: ", {"1", "2", "3", "4", "5", "6", "7"})
 
+        # Cada opcion delega el trabajo a una funcion especializada.
         if option == "1":
             apply_transformation(figure)
         elif option == "2":
