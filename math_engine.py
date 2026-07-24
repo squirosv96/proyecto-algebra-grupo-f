@@ -234,19 +234,54 @@ def check_subspace_restriction(a: float, b: float, c: float) -> str:
     """
     report = [f"Analizando la restricción de movimiento: {a:g}x + {b:g}y = {c:g}"]
 
-    # 1. Verificación del vector nulo (0,0)
-    contains_zero = (a * 0 + b * 0 == c)
-    report.append(f"1. Contiene al origen (0,0): {contains_zero} (Evaluación: {a:g}(0) + {b:g}(0) = {c:g})")
+    # 1. Verificación del vector nulo (0,0).
+    # Se usa tolerancia para evitar problemas de precisión con decimales.
+    contains_zero = abs(c) < 1e-9
+    report.extend([
+        "",
+        "1. Verificación del vector cero:",
+        f"   {a:g}(0) + {b:g}(0) = 0",
+        f"   Para pertenecer al conjunto se necesita que 0 = {c:g}.",
+        f"   Contiene al origen (0,0): {contains_zero}",
+    ])
 
     if not contains_zero:
         report.append("RESULTADO: NO es un subespacio vectorial porque no incluye la posición (0,0).")
         return "\n".join(report)
 
-    # 2. Demostración de Cierre por Suma
-    report.append("2. Cierre bajo la suma: VÁLIDO. Si u=(x1,y1) y v=(x2,y2) cumplen la ecuación, u+v también.")
-    # 3. Demostración de Cierre por Escalar
-    report.append("3. Cierre bajo multiplicación por escalar: VÁLIDO. Si u=(x1,y1) cumple, k*u también.")
-    report.append("RESULTADO: SÍ es un subespacio vectorial de R2 (representa una línea que pasa por el origen).")
+    # 2. Demostración general de cierre por suma.
+    report.extend([
+        "",
+        "2. Cierre bajo la suma:",
+        "   Sean u=(x1,y1) y v=(x2,y2) elementos del conjunto.",
+        "   Entonces: a*x1 + b*y1 = 0 y a*x2 + b*y2 = 0.",
+        "   Para u+v=(x1+x2, y1+y2):",
+        "   a*(x1+x2) + b*(y1+y2)",
+        "   = (a*x1 + b*y1) + (a*x2 + b*y2)",
+        "   = 0 + 0 = 0.",
+        "   Por lo tanto, u+v también pertenece al conjunto: VÁLIDO.",
+    ])
+
+    # 3. Demostración general de cierre por multiplicación escalar.
+    report.extend([
+        "",
+        "3. Cierre bajo multiplicación por escalar:",
+        "   Sea u=(x1,y1) un elemento del conjunto y k cualquier escalar.",
+        "   Como a*x1 + b*y1 = 0, para k*u=(k*x1,k*y1):",
+        "   a*(k*x1) + b*(k*y1)",
+        "   = k*(a*x1 + b*y1)",
+        "   = k*0 = 0.",
+        "   Por lo tanto, k*u también pertenece al conjunto: VÁLIDO.",
+        "",
+    ])
+
+    if abs(a) < 1e-9 and abs(b) < 1e-9:
+        report.append("RESULTADO: SÍ es un subespacio y corresponde a todo R2.")
+    else:
+        report.append(
+            "RESULTADO: SÍ es un subespacio de R2 y representa una línea "
+            "que pasa por el origen."
+        )
 
     return "\n".join(report)
 
