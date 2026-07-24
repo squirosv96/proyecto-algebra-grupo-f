@@ -1,38 +1,35 @@
 # PixelForge MathEngine 2D - Grupo F
 
-Programa de consola en Python para representar y transformar figuras mediante matrices de álgebra lineal, sin NumPy.
+Programa de consola en Python para representar y transformar figuras mediante
+operaciones de álgebra lineal, sin utilizar NumPy.
 
 ## Funciones
 
 - Jugador (cuadrado), enemigo (triángulo) y obstáculo (rectángulo).
-- Traslación, rotación, escalamiento uniforme y reflexión respecto a los ejes X o Y.
-- Vértices numerados en el gráfico ASCII para comparar su posición antes y después.
-- Opción para configurar y ejecutar varias transformaciones en secuencia.
-- Matrices, cálculos, coordenadas y gráfico ASCII para cada paso.
-- Comparación gráfica entre el estado inicial y el resultado final de la secuencia.
+- Traslación, rotación, escalamiento uniforme y reflexión.
+- Transformaciones matriciales respecto al centro actual de la figura.
+- Vértices numerados en un gráfico ASCII.
+- Ejecución de varias transformaciones en secuencia.
+- Comparación entre el estado inicial y el resultado final.
 - Análisis de independencia lineal, bases, dimensión y redundancia.
 - Verificación de restricciones que pueden formar subespacios vectoriales.
 - Historial de transformaciones, reinicio y cambio de figura.
 
 ## Ejecutar
 
-Requiere Python 3.10 o posterior y no tiene dependencias externas.
+Se requiere Python 3.10 o posterior. El proyecto no tiene dependencias externas.
 
 ```powershell
 python main.py
 ```
 
-Cada punto se representa como `[x, y]`. La rotación, el escalamiento y la reflexión usan matrices 2x2 y se aplican alrededor del centro actual de la figura. El escalamiento usa el mismo factor en X y Y para conservar la forma. La traslación se calcula sumando el vector `[dx, dy]`.
-
 ## Figuras disponibles
-
-Al iniciar, el programa solicita una de estas figuras:
 
 | Opción | Objeto | Figura | Vértices iniciales |
 |---|---|---|---|
-| 1 | Jugador | Cuadrado | $(0,0)$, $(2,0)$, $(2,2)$, $(0,2)$ |
-| 2 | Enemigo | Triángulo | $(0,0)$, $(2,0)$, $(1,2)$ |
-| 3 | Obstáculo | Rectángulo | $(0,0)$, $(4,0)$, $(4,2)$, $(0,2)$ |
+| 1 | Jugador | Cuadrado | `(0,0)`, `(2,0)`, `(2,2)`, `(0,2)` |
+| 2 | Enemigo | Triángulo | `(0,0)`, `(2,0)`, `(1,2)` |
+| 3 | Obstáculo | Rectángulo | `(0,0)`, `(4,0)`, `(4,2)`, `(0,2)` |
 
 Las coordenadas actuales cambian al aplicar transformaciones. Las coordenadas
 iniciales se conservan para poder restablecer la figura.
@@ -49,7 +46,7 @@ iniciales se conservan para poder restablecer la figura.
 7. Salir
 ```
 
-### 1. Aplicar una transformación
+## 1. Aplicar una transformación
 
 Permite escoger una sola operación:
 
@@ -68,326 +65,259 @@ Después de aplicarla, el programa muestra:
 - coordenadas resultantes;
 - gráfico ASCII comparativo.
 
-#### Operaciones con respecto al centro
+### Operaciones respecto al centro
 
 La rotación, el escalamiento y la reflexión se aplican alrededor del centro
-actual de la figura. Esto evita que la figura cambie de posición solamente
-porque se está rotando, escalando o reflejando.
+actual de la figura. La fórmula general es:
 
-Para una figura con $n$ vértices, el centro se calcula promediando sus
+```text
+P' = centro + M × (P - centro)
+```
+
+El centro de una figura con `n` vértices se obtiene promediando sus
 coordenadas:
 
-$$
-c =
-\frac{1}{n}
-\sum_{i=1}^{n}P_i
-$$
+```text
+centro_x = (x1 + x2 + ... + xn) / n
+centro_y = (y1 + y2 + ... + yn) / n
 
-Después, cada vértice se transforma mediante:
+centro = (centro_x, centro_y)
+```
 
-$$
-P_i'=c+M(P_i-c)
-$$
+Cada vértice se transforma en tres pasos:
 
-donde $M$ es la matriz de rotación, escalamiento o reflexión. La operación se
-divide en tres pasos:
+```text
+1. Punto relativo:       P_relativo = P - centro
+2. Aplicar la matriz:    P_transformado = M × P_relativo
+3. Regresar al centro:   P' = P_transformado + centro
+```
 
-1. Llevar el vértice al origen restando el centro:
+Para el cuadrado:
 
-   $$
-   P_{\text{relativo}}=P_i-c
-   $$
+```text
+P1=(0,0)  P2=(2,0)  P3=(2,2)  P4=(0,2)
 
-2. Aplicar la matriz a las coordenadas relativas:
+centro_x = (0 + 2 + 2 + 0) / 4 = 1
+centro_y = (0 + 0 + 2 + 2) / 4 = 1
 
-   $$
-   P_{\text{transformado}}=M P_{\text{relativo}}
-   $$
+centro = (1,1)
+```
 
-3. Devolver el vértice a la posición del objeto:
+Antes de aplicar una matriz a `P1`:
 
-   $$
-   P_i'=P_{\text{transformado}}+c
-   $$
+```text
+P1 - centro = (0,0) - (1,1) = (-1,-1)
+```
 
-Por ejemplo, para el cuadrado:
-
-$$
-P_1=(0,0),\quad P_2=(2,0),\quad P_3=(2,2),\quad P_4=(0,2)
-$$
-
-el centro es:
-
-$$
-c=
-\left(
-\frac{0+2+2+0}{4},
-\frac{0+0+2+2}{4}
-\right)
-=(1,1)
-$$
-
-Antes de aplicar cualquier matriz, $P_1$ se expresa respecto al centro:
-
-$$
-P_1-c=(0,0)-(1,1)=(-1,-1)
-$$
-
-La matriz se aplica a $(-1,-1)$, no directamente a $(0,0)$. Finalmente, al
-resultado se le suma $(1,1)$. El mismo procedimiento se repite para todos los
-vértices usando el mismo centro.
+La matriz actúa sobre `(-1,-1)`. Después se suma `(1,1)` al resultado. Este
+procedimiento se repite para todos los vértices usando el mismo centro.
 
 La traslación es la excepción: no necesita calcular el centro porque suma el
 mismo vector de desplazamiento a todos los vértices.
 
-#### Ejemplo de traslación
+### Ejemplo de traslación
 
-Si se ingresa el desplazamiento:
+Si el desplazamiento es:
 
-$$
-d=(3,-1)
-$$
+```text
+d = (3,-1)
+```
 
-entonces:
+la operación es:
 
-$$
-p'=p+d
-$$
+```text
+P' = P + d
+```
 
-Para $P_1=(0,0)$:
+Para `P1=(0,0)`:
 
-$$
-P_1'=(0,0)+(3,-1)=(3,-1)
-$$
+```text
+P1' = (0,0) + (3,-1) = (3,-1)
+```
 
-La traslación cambia la posición, pero no el tamaño ni la orientación de la
-figura.
+La traslación cambia la posición, pero no el tamaño ni la orientación.
 
-#### Ejemplo de rotación
+### Ejemplo de rotación
 
-Para rotar el cuadrado $90^\circ$ en sentido antihorario se utiliza:
+Para rotar el cuadrado 90 grados en sentido antihorario:
 
-$$
-R(90^\circ)=
-\begin{bmatrix}
-0 & -1 \\
-1 & 0
-\end{bmatrix}
-$$
+```text
+           [ 0  -1 ]
+R(90°)  =  [ 1   0 ]
+```
 
-Si $P_1=(0,0)$ y el centro es $c=(1,1)$:
+Con `P1=(0,0)` y `centro=(1,1)`:
 
-$$
-P_1'=c+R(90^\circ)(P_1-c)
-$$
+```text
+P1 - centro = (-1,-1)
 
-$$
-P_1'=
-\begin{bmatrix}
-1 \\
-1
-\end{bmatrix}
-+
-\begin{bmatrix}
-0 & -1 \\
-1 & 0
-\end{bmatrix}
-\begin{bmatrix}
--1 \\
--1
-\end{bmatrix}
-=
-\begin{bmatrix}
-2 \\
-0
-\end{bmatrix}
-$$
+R(90°) × P_relativo:
 
-Después de aplicar la misma operación a todos los vértices:
+[ 0  -1 ] [ -1 ]   [  1 ]
+[ 1   0 ] [ -1 ] = [ -1 ]
 
-$$
-P_1'=(2,0),\quad P_2'=(2,2),\quad P_3'=(0,2),\quad P_4'=(0,0)
-$$
+P1' = (1,1) + (1,-1) = (2,0)
+```
 
-El centro permanece en $(1,1)$ y la figura cambia su orientación sin
-desplazarse.
+Después de transformar todos los vértices:
 
-#### Ejemplo de escalamiento
+```text
+P1'=(2,0)  P2'=(2,2)  P3'=(0,2)  P4'=(0,0)
+```
 
-Para reducir el cuadrado a la mitad sin mover su centro se utiliza $k=0.5$:
+El centro permanece en `(1,1)`, por lo que la figura rota sin desplazarse.
 
-$$
-S(0.5)=
-\begin{bmatrix}
-0.5 & 0 \\
-0 & 0.5
-\end{bmatrix}
-$$
+### Ejemplo de escalamiento uniforme
 
-Si $P_1=(0,0)$ y el centro es $c=(1,1)$:
+El mismo factor se aplica en X y Y para conservar las proporciones. Para
+reducir el cuadrado a la mitad se utiliza `k=0.5`:
 
-$$
-P_1'=c+S(0.5)(P_1-c)
-$$
+```text
+          [ 0.5   0  ]
+S(0.5) = [  0   0.5 ]
+```
 
-$$
-P_1'=
-\begin{bmatrix}
-1 \\
-1
-\end{bmatrix}
-+
-\begin{bmatrix}
-0.5 & 0 \\
-0 & 0.5
-\end{bmatrix}
-\begin{bmatrix}
--1 \\
--1
-\end{bmatrix}
-=
-\begin{bmatrix}
-0.5 \\
-0.5
-\end{bmatrix}
-$$
+Con `P1=(0,0)` y `centro=(1,1)`:
 
-El centro permanece en $(1,1)$ y la forma conserva sus proporciones.
+```text
+P1 - centro = (-1,-1)
 
-#### Ejemplo de reflexión
+S(0.5) × P_relativo:
 
-Para reflejar el cuadrado respecto a una línea horizontal que atraviesa su
-centro se usa $F_x$. Con $P_1=(0,0)$ y $c=(1,1)$:
+[ 0.5   0  ] [ -1 ]   [ -0.5 ]
+[  0   0.5 ] [ -1 ] = [ -0.5 ]
 
-$$
-P_1'=c+F_x(P_1-c)
-$$
+P1' = (1,1) + (-0.5,-0.5) = (0.5,0.5)
+```
 
-$$
-P_1'=
-\begin{bmatrix}
-1 \\
-1
-\end{bmatrix}
-+
-\begin{bmatrix}
-1 & 0 \\
-0 & -1
-\end{bmatrix}
-\begin{bmatrix}
--1 \\
--1
-\end{bmatrix}
-=
-\begin{bmatrix}
-0 \\
-2
-\end{bmatrix}
-$$
+El centro permanece en `(1,1)` y la figura conserva su forma.
 
-La opción de reflexión Y realiza el mismo procedimiento con una línea vertical
-que atraviesa el centro.
+Comportamiento del factor:
 
-### 2. Aplicar secuencia de transformaciones
+- `k > 1`: aumenta el tamaño.
+- `0 < k < 1`: reduce el tamaño.
+- `k = 1`: conserva el tamaño.
+- `k < 0`: escala e invierte la orientación respecto al centro.
+- `k = 0`: no está permitido.
 
-Esta opción solicita la cantidad de operaciones y luego permite configurarlas
-una por una. Cada transformación recibe las coordenadas producidas por la
-anterior:
+### Ejemplo de reflexión
 
-$$
-p_0 \xrightarrow{T_1} p_1
-\xrightarrow{T_2} p_2
-\xrightarrow{T_3} p_3
-$$
+Para reflejar respecto a una línea horizontal que atraviesa el centro se usa:
+
+```text
+       [ 1   0 ]
+Fx  =  [ 0  -1 ]
+```
+
+Con `P1=(0,0)` y `centro=(1,1)`:
+
+```text
+P1 - centro = (-1,-1)
+
+Fx × P_relativo:
+
+[ 1   0 ] [ -1 ]   [ -1 ]
+[ 0  -1 ] [ -1 ] = [  1 ]
+
+P1' = (1,1) + (-1,1) = (0,2)
+```
+
+La reflexión Y usa una línea vertical que atraviesa el centro.
+
+## 2. Aplicar una secuencia de transformaciones
+
+Esta opción solicita la cantidad de operaciones y permite configurarlas una
+por una. Cada transformación recibe las coordenadas producidas por la anterior:
+
+```text
+P0 --T1--> P1 --T2--> P2 --T3--> P3
+```
 
 Ejemplo:
 
-1. Rotar $90^\circ$.
-2. Escalar uniformemente por $0.5$.
-3. Trasladar por $(3,-1)$.
+```text
+1. Rotar 90 grados.
+2. Escalar uniformemente por 0.5.
+3. Trasladar por (3,-1).
+```
 
 Para el cuadrado inicial, las coordenadas finales son:
 
-$$
-P_1=(4.5,-0.5),\quad
-P_2=(4.5,0.5),\quad
-P_3=(3.5,0.5),\quad
-P_4=(3.5,-0.5)
-$$
+```text
+P1=(4.5,-0.5)
+P2=(4.5, 0.5)
+P3=(3.5, 0.5)
+P4=(3.5,-0.5)
+```
 
-El programa muestra el resultado de cada paso y, al final, un gráfico que
-compara el estado anterior a toda la secuencia con el resultado final.
+El programa muestra el resultado de cada paso y finalmente compara el estado
+anterior a toda la secuencia con el resultado final.
 
-### 3. Analizar matemáticamente el escenario
+## 3. Analizar matemáticamente el escenario
 
-Contiene dos opciones de álgebra lineal.
+Esta opción contiene dos análisis de álgebra lineal.
 
-#### 3.1 Independencia lineal, base y dimensión
+### 3.1 Independencia lineal, base y dimensión
 
-Los vértices actuales se interpretan como vectores de $\mathbb{R}^2$. Dos
-vectores:
+Los vértices actuales se interpretan como vectores de `R²`. Dos vectores:
 
-$$
-v_1=(x_1,y_1),\qquad v_2=(x_2,y_2)
-$$
+```text
+v1 = (x1,y1)
+v2 = (x2,y2)
+```
 
-son linealmente independientes cuando:
+son linealmente independientes cuando su determinante no es cero:
 
-$$
-\det(v_1,v_2)=x_1y_2-y_1x_2\neq0
-$$
+```text
+det(v1,v2) = x1×y2 - y1×x2
 
-En $\mathbb{R}^2$ una base puede contener como máximo dos vectores. Los demás
+det(v1,v2) ≠ 0  =>  independientes
+det(v1,v2) = 0  =>  dependientes
+```
+
+En `R²`, el espacio generado puede tener dimensión máxima 2. Si los vértices
+generan todo `R²`, cualquier base contiene exactamente dos vectores. Los demás
 son combinaciones lineales y se reportan como redundantes para generar el
 espacio vectorial.
 
 Ejemplo con el cuadrado:
 
-$$
-P_1=(0,0),\quad P_2=(2,0),\quad P_3=(2,2),\quad P_4=(0,2)
-$$
+```text
+P1=(0,0)  P2=(2,0)  P3=(2,2)  P4=(0,2)
+```
 
-- $P_1$ es el vector cero y es dependiente.
-- $P_2$ y $P_3$ son independientes porque:
+`P1` es el vector cero y es dependiente. Para `P2` y `P3`:
 
-$$
-\det(P_2,P_3)=
-\begin{vmatrix}
-2 & 2 \\
-0 & 2
-\end{vmatrix}
-=2(2)-0(2)=4\neq0
-$$
+```text
+              | 2  2 |
+det(P2,P3) = | 0  2 | = 2×2 - 0×2 = 4
+```
 
-- $P_4$ es combinación lineal:
+Como el determinante no es cero, son independientes. El cuarto vector es una
+combinación lineal:
 
-$$
-P_4=-P_2+P_3
-$$
+```text
+P4 = -P2 + P3
+(0,2) = -(2,0) + (2,2)
+```
 
 Una base encontrada es:
 
-$$
-\mathcal{B}=\{(2,0),(2,2)\}
-$$
+```text
+B = {(2,0), (2,2)}
+dimensión = 2
+```
 
-y la dimensión del espacio generado es:
+Un vértice redundante para generar el espacio vectorial no necesariamente puede
+eliminarse del dibujo: puede ser necesario para conservar la forma geométrica.
 
-$$
-\dim(\operatorname{span}\mathcal{B})=2
-$$
-
-> Un vértice redundante para generar el espacio vectorial no necesariamente
-> puede eliminarse del dibujo: puede seguir siendo necesario para conservar la
-> forma geométrica.
-
-#### 3.2 Restricción de espacio o subespacio
+### 3.2 Restricción de espacio o subespacio
 
 El usuario ingresa una ecuación:
 
-$$
-ax+by=c
-$$
+```text
+a×x + b×y = c
+```
 
 El programa comprueba:
 
@@ -395,36 +325,43 @@ El programa comprueba:
 2. cierre bajo la suma;
 3. cierre bajo multiplicación escalar.
 
-Si $c\neq0$, el origen no pertenece al conjunto:
+Si `c ≠ 0`, el origen no pertenece al conjunto:
 
-$$
-a(0)+b(0)=0\neq c
-$$
+```text
+a×0 + b×0 = 0 ≠ c
+```
 
-por lo tanto, no es un subespacio.
+Por lo tanto, no es un subespacio.
 
-Si $c=0$, para $u,v$ que cumplen la ecuación:
+Si `c = 0` y `u`, `v` cumplen la ecuación:
 
-$$
-a(u_x+v_x)+b(u_y+v_y)
-=(au_x+bu_y)+(av_x+bv_y)=0
-$$
+```text
+a(ux + vx) + b(uy + vy)
+= (a×ux + b×uy) + (a×vx + b×vy)
+= 0 + 0
+= 0
+```
 
-También, para cualquier escalar $k$:
+Esto demuestra el cierre bajo la suma. Para cualquier escalar `k`:
 
-$$
-a(ku_x)+b(ku_y)=k(au_x+bu_y)=0
-$$
+```text
+a(k×ux) + b(k×uy)
+= k(a×ux + b×uy)
+= k×0
+= 0
+```
 
-Por ejemplo:
+Esto demuestra el cierre bajo multiplicación escalar.
 
-- $2x+3y=0$ sí es un subespacio: es una recta por el origen.
-- $2x+3y=5$ no es un subespacio: no contiene el origen.
-- $0x+0y=0$ representa todo $\mathbb{R}^2$.
+Ejemplos:
 
-### 4. Ver historial de transformaciones
+- `2x + 3y = 0`: sí es un subespacio; es una recta por el origen.
+- `2x + 3y = 5`: no es un subespacio; no contiene el origen.
+- `0x + 0y = 0`: representa todo `R²`.
 
-Muestra en orden cada operación aplicada a la figura actual, junto con:
+## 4. Ver el historial de transformaciones
+
+Muestra en orden cada operación aplicada a la figura actual:
 
 - descripción de la transformación;
 - coordenadas antes de aplicarla;
@@ -432,17 +369,17 @@ Muestra en orden cada operación aplicada a la figura actual, junto con:
 
 El historial pertenece a la figura actual y se vacía al restablecerla.
 
-### 5. Restablecer figura
+## 5. Restablecer la figura
 
 Recupera las coordenadas iniciales de la figura seleccionada y elimina su
 historial.
 
-### 6. Escoger otra figura
+## 6. Escoger otra figura
 
 Regresa al catálogo de cuadrado, triángulo y rectángulo. La nueva figura
-comienza en sus coordenadas iniciales y con historial vacío.
+comienza en sus coordenadas iniciales y con un historial vacío.
 
-### 7. Salir
+## 7. Salir
 
 Finaliza el ciclo del menú y cierra el programa.
 
@@ -451,101 +388,60 @@ Finaliza el ciclo del menú y cierra el programa.
 El gráfico ajusta automáticamente su escala para incluir las coordenadas antes
 y después de la transformación:
 
-- `O1`, `O2`, ... representan vértices originales.
-- `T1`, `T2`, ... representan vértices transformados.
-- `X1`, `X2`, ... indican que el vértice conserva la misma posición.
-- `O4/T2` indica que dos vértices diferentes aparecen en la misma celda.
-- `-` representa el eje X, `|` representa el eje Y y `+` representa el origen.
+- `O1`, `O2`, etc.: vértices originales.
+- `T1`, `T2`, etc.: vértices transformados.
+- `X1`, `X2`, etc.: el vértice conserva la misma posición.
+- `O4/T2`: dos vértices diferentes aparecen en la misma celda.
+- `-`: eje X.
+- `|`: eje Y.
+- `+`: origen.
 
-## Matrices de transformación
+## Referencia de matrices
 
-Un vértice se representa mediante el vector:
+Un vértice se representa como un vector columna:
 
-$$
-p =
-\begin{bmatrix}
-x \\
-y
-\end{bmatrix}
-$$
+```text
+    [ x ]
+P = [ y ]
+```
 
 ### Rotación
 
-Para rotar un ángulo $\theta$ en sentido antihorario se utiliza:
+```text
+         [ cos(θ)  -sin(θ) ]
+R(θ)  =  [ sin(θ)   cos(θ) ]
+```
 
-$$
-R(\theta) =
-\begin{bmatrix}
-\cos(\theta) & -\sin(\theta) \\
-\sin(\theta) & \cos(\theta)
-\end{bmatrix}
-$$
-
-Por ejemplo, para una rotación de $90^\circ$:
-
-$$
-R(90^\circ) =
-\begin{bmatrix}
-0 & -1 \\
-1 & 0
-\end{bmatrix}
-$$
+Los ángulos positivos producen rotaciones en sentido antihorario.
 
 ### Escalamiento uniforme
 
-El mismo factor $k$ se aplica en X y Y para cambiar el tamaño sin alterar las
-proporciones:
-
-$$
-S(k) =
-\begin{bmatrix}
-k & 0 \\
-0 & k
-\end{bmatrix}
-$$
-
-- Si $k > 1$, la figura aumenta de tamaño.
-- Si $0 < k < 1$, la figura se reduce.
-- Si $k = 1$, la figura conserva su tamaño.
-- Si $k < 0$, además de escalar, la figura invierte su orientación respecto al centro.
-- El programa no permite $k = 0$.
+```text
+        [ k  0 ]
+S(k) = [ 0  k ]
+```
 
 ### Reflexión
 
-Reflexión respecto al eje X:
+Respecto al eje horizontal que atraviesa el centro:
 
-$$
-F_x =
-\begin{bmatrix}
-1 & 0 \\
-0 & -1
-\end{bmatrix}
-$$
+```text
+       [ 1   0 ]
+Fx  =  [ 0  -1 ]
+```
 
-Reflexión respecto al eje Y:
+Respecto al eje vertical que atraviesa el centro:
 
-$$
-F_y =
-\begin{bmatrix}
--1 & 0 \\
-0 & 1
-\end{bmatrix}
-$$
-
-Como el programa aplica estas matrices respecto al centro de la figura, los
-ejes de reflexión son líneas paralelas a X o Y que atraviesan dicho centro.
+```text
+       [ -1  0 ]
+Fy  =  [  0  1 ]
+```
 
 ### Traslación
 
-La traslación no puede representarse con una matriz 2x2. Se suma el vector de
-desplazamiento:
+La traslación no se representa con una matriz 2x2. Se suma un vector:
 
-$$
-d =
-\begin{bmatrix}
-d_x \\
-d_y
-\end{bmatrix}
-\qquad
-p' = p+d
-$$
+```text
+d  = (dx,dy)
+P' = P + d
+```

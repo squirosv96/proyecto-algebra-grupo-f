@@ -169,7 +169,7 @@ class Figure:
         self.history.clear()
 
 
-def ascii_plot(original: Sequence[Point], transformed: Sequence[Point], width: int = 61, height: int = 21) -> str:
+def ascii_plot(original: Sequence[Point], transformed: Sequence[Point], width: int = 70, height: int = 30) -> str:
     """Dibuja vertices numerados: O original, T transformado, X coincidencia."""
     # Se incluye el origen para que los ejes siempre tengan una referencia.
     all_points = list(original) + list(transformed) + [(0.0, 0.0)]
