@@ -15,26 +15,24 @@ def read_option(prompt: str, valid: set[str]) -> str:
         print("Opcion invalida. Intente de nuevo.")
 
 
-def read_number(prompt: str, nonzero: bool = False) -> float:
-    """Lee un numero decimal y, si se solicita, rechaza el valor cero."""
+def read_number(
+    prompt: str,
+    nonzero: bool = False,
+    positive_integer: bool = False,
+) -> float:
+    """Lee un numero y aplica las validaciones solicitadas."""
     while True:
         try:
             value = float(input(prompt).strip().replace(",", "."))
             if nonzero and value == 0:
                 print("El valor no puede ser cero.")
                 continue
+            if positive_integer and (value <= 0 or not value.is_integer()):
+                print("Ingrese un numero entero mayor que cero.")
+                continue
             return value
         except ValueError:
             print("Ingrese un numero valido, por ejemplo 2 o 1.5.")
-
-
-def read_positive_integer(prompt: str) -> int:
-    """Lee una cantidad entera estrictamente positiva."""
-    while True:
-        value = input(prompt).strip()
-        if value.isdigit() and int(value) > 0:
-            return int(value)
-        print("Ingrese un numero entero mayor que cero.")
 
 
 def choose_figure() -> Figure:
@@ -88,7 +86,6 @@ def show_result(figure: Figure, entry) -> None:
         print(f"\nVector de traslacion: ({entry.displacement[0]:.2f}, {entry.displacement[1]:.2f})")
         print("\nCalculos realizados ([x, y] + [dx, dy]):")
         calculation, operator = translation_calculation_text, entry.displacement
-    # zip relaciona cada vertice anterior con su resultado.
     for index, (before, after) in enumerate(zip(entry.before, entry.after), 1):
         if entry.center is not None:
             relative = (before[0] - entry.center[0], before[1] - entry.center[1])
@@ -111,7 +108,10 @@ def apply_transformation(figure: Figure) -> None:
 
 def apply_sequence(figure: Figure) -> None:
     """Aplica varias operaciones en orden sobre el resultado anterior."""
-    amount = read_positive_integer("Cantidad de transformaciones en la secuencia: ")
+    amount = int(read_number(
+        "Cantidad de transformaciones en la secuencia: ",
+        positive_integer=True,
+    ))
     # Se conserva el inicio para compararlo con el resultado completo.
     initial_points = figure.points
     for step in range(1, amount + 1):
