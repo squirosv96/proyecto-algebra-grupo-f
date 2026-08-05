@@ -173,7 +173,7 @@ El mismo factor se aplica en X y Y para conservar las proporciones. Para
 reducir el cuadrado a la mitad se utiliza `k=0.5`:
 
 ```text
-          [ 0.5   0  ]
+         [ 0.5   0  ]
 S(0.5) = [  0   0.5 ]
 ```
 
