@@ -96,10 +96,13 @@ class Figure:
     name: str
     original_points: tuple[Point, ...]
     points: tuple[Point, ...] = field(init=False)
+    # Almacena cada transformacion para reconstruir el recorrido de la figura.
     history: list[TransformationResult] = field(init=False, default_factory=list)
 
     def __post_init__(self) -> None:
+        """Inicia la figura con sus puntos originales y un historial vacio."""
         self.points = self.original_points
+        self.history = []
 
     def apply(self, description: str, matrix: Matrix) -> TransformationResult:
         """Aplica una matriz respecto al centro actual de la figura."""
@@ -162,6 +165,7 @@ class Figure:
     def reset(self) -> None:
         """Recupera la figura original y elimina su historial."""
         self.points = self.original_points
+        #Cuando el usuario limpie la figura, el histrial se vacía
         self.history.clear()
 
 
