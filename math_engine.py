@@ -9,6 +9,9 @@ from typing import Sequence
 # Alias de tipos: una matriz 2x2 y un punto/vector del plano R2.
 Matrix = tuple[tuple[float, float], tuple[float, float]]
 Point = tuple[float, float]
+Cell = tuple[int, int]
+Grid = list[list[str]]
+Bounds = tuple[float, float, float, float]
 
 # Figuras iniciales. Cada vertice se almacena como una tupla (x, y).
 FIGURES: dict[str, tuple[str, tuple[Point, ...]]] = {
@@ -166,57 +169,120 @@ class Figure:
         self.history.clear()
 
 
-def ascii_plot(original: Sequence[Point], transformed: Sequence[Point], width: int = 70, height: int = 30) -> str:
-    """Dibuja vertices numerados: O original, T transformado, X coincidencia."""
-    # Se incluye el origen para que los ejes siempre tengan una referencia.
-    all_points = list(original) + list(transformed) + [(0.0, 0.0)]
-    min_x, max_x = min(p[0] for p in all_points), max(p[0] for p in all_points)
-    min_y, max_y = min(p[1] for p in all_points), max(p[1] for p in all_points)
-    # El margen evita que las etiquetas queden pegadas al borde.
-    px, py = max(1.0, (max_x - min_x) * 0.1), max(1.0, (max_y - min_y) * 0.1)
-    min_x, max_x, min_y, max_y = min_x - px, max_x + px, min_y - py, max_y + py
+def _plot_bounds(original: Sequence[Point], transformed: Sequence[Point]) -> Bounds:
+    """Calcula los límites del gráfico e incluye un margen alrededor."""
+    # Incluir el origen garantiza que los ejes siempre tengan una referencia.
+    all_points = [*original, *transformed, (0.0, 0.0)]
+    x_coordinates = [point[0] for point in all_points]
+    y_coordinates = [point[1] for point in all_points]
+
+    min_x, max_x = min(x_coordinates), max(x_coordinates)
+    min_y, max_y = min(y_coordinates), max(y_coordinates)
+
+    x_margin = max(1.0, (max_x - min_x) * 0.1)
+    y_margin = max(1.0, (max_y - min_y) * 0.1)
+
+    return (
+        min_x - x_margin,
+        max_x + x_margin,
+        min_y - y_margin,
+        max_y + y_margin,
+    )
+
+
+def _point_to_cell(point: Point, bounds: Bounds, width: int, height: int) -> Cell:
+    """Convierte un punto cartesiano en una celda de la cuadrícula."""
+    min_x, max_x, min_y, max_y = bounds
+    x, y = point
+
+    column = round((x - min_x) / (max_x - min_x) * (width - 1))
+    row = round((max_y - y) / (max_y - min_y) * (height - 1))
+    return row, column
+
+
+def _draw_axes(grid: Grid, bounds: Bounds) -> None:
+    """Dibuja los ejes X, Y y el origen en la cuadrícula."""
+    height = len(grid)
+    width = len(grid[0])
+    min_x, max_x, min_y, max_y = bounds
+    origin_row, origin_column = _point_to_cell((0.0, 0.0), bounds, width, height)
+
+    if min_x <= 0 <= max_x:
+        for row in range(height):
+            grid[row][origin_column] = "|"
+
+    if min_y <= 0 <= max_y:
+        for column in range(width):
+            grid[origin_row][column] = "-"
+
+    grid[origin_row][origin_column] = "+"
+
+
+def _group_vertex_labels(
+    original: Sequence[Point],
+    transformed: Sequence[Point],
+    bounds: Bounds,
+    width: int,
+    height: int,
+) -> dict[Cell, list[str]]:
+    """Agrupa las etiquetas de los vértices que ocupan la misma celda."""
+    original_cells = [
+        _point_to_cell(point, bounds, width, height) for point in original
+    ]
+    transformed_cells = [
+        _point_to_cell(point, bounds, width, height) for point in transformed
+    ]
+    transformed_indices = {
+        cell: index for index, cell in enumerate(transformed_cells, start=1)
+    }
+    labels_by_cell: dict[Cell, list[str]] = {}
+
+    for index, cell in enumerate(original_cells, start=1):
+        label = f"X{index}" if transformed_indices.get(cell) == index else f"O{index}"
+        labels_by_cell.setdefault(cell, []).append(label)
+
+    for index, cell in enumerate(transformed_cells, start=1):
+        if cell != original_cells[index - 1]:
+            labels_by_cell.setdefault(cell, []).append(f"T{index}")
+
+    return labels_by_cell
+
+
+def _write_label(grid: Grid, cell: Cell, label: str) -> None:
+    """Escribe una etiqueta sin sobrepasar el borde derecho."""
+    row, column = cell
+    width = len(grid[0])
+    start_column = min(column, width - len(label))
+
+    for offset, character in enumerate(label):
+        grid[row][start_column + offset] = character
+
+
+def ascii_plot(
+    original: Sequence[Point],
+    transformed: Sequence[Point],
+    width: int = 70,
+    height: int = 30,
+) -> str:
+    """Dibuja vértices numerados: O original, T transformado, X coincidencia."""
+    bounds = _plot_bounds(original, transformed)
     grid = [[" " for _ in range(width)] for _ in range(height)]
 
-    def cell(point: Point) -> tuple[int, int]:
-        """Convierte coordenadas cartesianas en fila y columna del texto."""
-        column = round((point[0] - min_x) / (max_x - min_x) * (width - 1))
-        row = round((max_y - point[1]) / (max_y - min_y) * (height - 1))
-        return row, column
+    _draw_axes(grid, bounds)
 
-    # Los ejes se dibujan solo si el cero pertenece al rango visible.
-    if min_x <= 0 <= max_x:
-        axis_column = cell((0, 0))[1]
-        for row in range(height):
-            grid[row][axis_column] = "|"
-    if min_y <= 0 <= max_y:
-        axis_row = cell((0, 0))[0]
-        for column in range(width):
-            grid[axis_row][column] = "-"
-    origin_row, origin_column = cell((0, 0))
-    grid[origin_row][origin_column] = "+"
-    def put_label(point: Point, label: str) -> None:
-        """Escribe una etiqueta sin sobrepasar el borde derecho."""
-        row, column = cell(point)
-        # Desplaza la etiqueta si esta cerca del borde derecho.
-        start = min(column, width - len(label))
-        for offset, character in enumerate(label):
-            grid[row][start + offset] = character
+    labels_by_cell = _group_vertex_labels(
+        original,
+        transformed,
+        bounds,
+        width,
+        height,
+    )
+    for cell, labels in labels_by_cell.items():
+        _write_label(grid, cell, "/".join(labels))
 
-    # Agrupa etiquetas cuando varios vertices ocupan la misma celda.
-    transformed_cells = {cell(point): index for index, point in enumerate(transformed, 1)}
-    labels_by_cell: dict[tuple[int, int], list[str]] = {}
-    for index, point in enumerate(original, 1):
-        label = f"X{index}" if transformed_cells.get(cell(point)) == index else f"O{index}"
-        labels_by_cell.setdefault(cell(point), []).append(label)
-    for index, point in enumerate(transformed, 1):
-        if cell(point) != cell(original[index - 1]):
-            labels_by_cell.setdefault(cell(point), []).append(f"T{index}")
-    for position, labels in labels_by_cell.items():
-        row, column = position
-        put_label((min_x + column / (width - 1) * (max_x - min_x),
-                   max_y - row / (height - 1) * (max_y - min_y)), "/".join(labels))
-    legend = "O#=vertice original  T#=vertice transformado  X#=coinciden"
-    return "\n".join("".join(row) for row in grid) + "\n" + legend
+    drawing = "\n".join("".join(row) for row in grid)
+    legend = "O#=vértice original  T#=vértice transformado  X#=coinciden"
+    return f"{drawing}\n{legend}"
 
 
 # =====================================================================

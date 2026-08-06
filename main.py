@@ -1,7 +1,7 @@
 """Interfaz de consola de PixelForge MathEngine 2D."""
 
-from math_engine import (FIGURES, Figure, ascii_plot,
-                         calculation_text, format_matrix, format_points, rotation_matrix,
+from math_engine import (FIGURES, Matrix, Point, Figure, ascii_plot,
+                         format_matrix, format_points, rotation_matrix,
                          scaling_matrix, reflection_matrix, translation_calculation_text,
                          check_subspace_restriction, analyze_figure_vectors)
 
@@ -68,30 +68,98 @@ def choose_transformation():
     return description, reflection_matrix(axis), None
 
 
+def show_centered_vertex_calculation(
+    index: int,
+    point: Point,
+    result: Point,
+    matrix: Matrix,
+    center: Point,
+) -> None:
+    """Muestra los tres pasos numericos de una transformacion centrada."""
+    point_x, point_y = point
+    center_x, center_y = center
+
+    # Paso 1: llevar el vertice a coordenadas relativas al centro.
+    relative_x = point_x - center_x
+    relative_y = point_y - center_y
+
+    # Paso 2: aplicar la matriz 2x2 al vertice relativo.
+    transformed_x = (
+        matrix[0][0] * relative_x
+        + matrix[0][1] * relative_y
+    )
+    transformed_y = (
+        matrix[1][0] * relative_x
+        + matrix[1][1] * relative_y
+    )
+
+    # Paso 3: regresar del sistema local al sistema global.
+    final_x = transformed_x + center_x
+    final_y = transformed_y + center_y
+
+    print(f"\n  P{index}=({point_x:.2f}, {point_y:.2f})")
+    print("    1. Resta del centro:")
+    print(
+        f"       x relativo = {point_x:.2f} - {center_x:.2f} "
+        f"= {relative_x:.2f}"
+    )
+    print(
+        f"       y relativo = {point_y:.2f} - {center_y:.2f} "
+        f"= {relative_y:.2f}"
+    )
+
+    print("    2. Transformacion con la matriz:")
+    print(
+        f"       x transformado = ({matrix[0][0]:.3f} * {relative_x:.2f}) "
+        f"+ ({matrix[0][1]:.3f} * {relative_y:.2f}) "
+        f"= {transformed_x:.2f}"
+    )
+    print(
+        f"       y transformado = ({matrix[1][0]:.3f} * {relative_x:.2f}) "
+        f"+ ({matrix[1][1]:.3f} * {relative_y:.2f}) "
+        f"= {transformed_y:.2f}"
+    )
+
+    print("    3. Suma del centro:")
+    print(
+        f"       x final = {transformed_x:.2f} + {center_x:.2f} "
+        f"= {final_x:.2f}"
+    )
+    print(
+        f"       y final = {transformed_y:.2f} + {center_y:.2f} "
+        f"= {final_y:.2f}"
+    )
+    print(f"       Resultado: ({result[0]:.2f}, {result[1]:.2f})")
+
+
 def show_result(figure: Figure, entry) -> None:
     """Presenta operador, calculos, coordenadas y grafico comparativo."""
     print(f"\n{'=' * 72}\n{entry.description}\nFigura: {figure.name}")
     print(f"Coordenadas antes:   {format_points(entry.before)}")
     # Una matriz indica rotacion, escalamiento o reflexion.
     if entry.matrix is not None:
-        print("\nMatriz 2x2 utilizada:\n" + format_matrix(entry.matrix))
+        print("\nMatriz 2x2 utilizada:\n" + format_matrix(entry.matrix)+ "\n")
         print(f"Centro fijo de la figura: ({entry.center[0]:.2f}, {entry.center[1]:.2f})")
-        print("Calculo: centro + M * (punto - centro)")
-        calculation, operator = calculation_text, entry.matrix
+        print("\nCalculos por vertice:")
+        for index, (before, after) in enumerate(zip(entry.before, entry.after), 1):
+            show_centered_vertex_calculation(
+                index,
+                before,
+                after,
+                entry.matrix,
+                entry.center,
+            )
     else:
         # La ausencia de matriz indica una traslacion vectorial.
         print(f"\nVector de traslacion: ({entry.displacement[0]:.2f}, {entry.displacement[1]:.2f})")
         print("\nCalculos realizados ([x, y] + [dx, dy]):")
-        calculation, operator = translation_calculation_text, entry.displacement
-    # zip relaciona cada vertice anterior con su resultado.
-    for index, (before, after) in enumerate(zip(entry.before, entry.after), 1):
-        if entry.center is not None:
-            relative = (before[0] - entry.center[0], before[1] - entry.center[1])
-            transformed_relative = (after[0] - entry.center[0], after[1] - entry.center[1])
-            detail = calculation(operator, relative, transformed_relative)
-            print(f"  P{index}: relativo al centro {relative} -> {detail}; final = ({after[0]:.2f}, {after[1]:.2f})")
-        else:
-            print(f"  P{index}: {calculation(operator, before, after)}")
+        for index, (before, after) in enumerate(zip(entry.before, entry.after), 1):
+            detail = translation_calculation_text(
+                entry.displacement,
+                before,
+                after,
+            )
+            print(f"  P{index}: {detail}")
     print(f"\nCoordenadas despues: {format_points(entry.after)}")
     print("\nRepresentacion grafica:\n" + ascii_plot(entry.before, entry.after))
 
