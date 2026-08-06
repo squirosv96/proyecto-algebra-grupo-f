@@ -257,7 +257,7 @@ def main() -> None:
         elif option == "2":
             apply_sequence(figure)
         elif option == "3":
-            analyze_scene_menu(figure) # <-- Llama a nuestra nueva funcionalidad
+            analyze_scene_menu(figure)
         elif option == "4":
             show_history(figure)
         elif option == "5":
