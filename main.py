@@ -75,11 +75,8 @@ def show_result(figure: Figure, entry) -> None:
     # Una matriz indica rotacion, escalamiento o reflexion.
     if entry.matrix is not None:
         print("\nMatriz 2x2 utilizada:\n" + format_matrix(entry.matrix))
-        if entry.center is not None:
-            print(f"Centro fijo de la figura: ({entry.center[0]:.2f}, {entry.center[1]:.2f})")
-            print("Calculo: centro + M * (punto - centro)")
-        else:
-            print("\nCalculos realizados (M * [x, y]):")
+        print(f"Centro fijo de la figura: ({entry.center[0]:.2f}, {entry.center[1]:.2f})")
+        print("Calculo: centro + M * (punto - centro)")
         calculation, operator = calculation_text, entry.matrix
     else:
         # La ausencia de matriz indica una traslacion vectorial.
