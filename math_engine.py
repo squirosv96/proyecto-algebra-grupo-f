@@ -66,14 +66,6 @@ def format_points(points: Sequence[Point]) -> str:
     return "  ".join(f"P{i}=({x:.2f}, {y:.2f})" for i, (x, y) in enumerate(points, 1))
 
 
-def calculation_text(matrix: Matrix, point: Point, result: Point) -> str:
-    """Explica las operaciones de la multiplicacion matriz-vector."""
-    x, y = point
-    first = f"({matrix[0][0]:.3f}*{x:.2f}) + ({matrix[0][1]:.3f}*{y:.2f})"
-    second = f"({matrix[1][0]:.3f}*{x:.2f}) + ({matrix[1][1]:.3f}*{y:.2f})"
-    return f"x' = {first} = {result[0]:.2f}; y' = {second} = {result[1]:.2f}"
-
-
 def translation_calculation_text(displacement: Point, point: Point, result: Point) -> str:
     """Explica la suma utilizada para trasladar un vertice."""
     return (f"x' = {point[0]:.2f} + {displacement[0]:.2f} = {result[0]:.2f}; "
